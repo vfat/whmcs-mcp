@@ -11,12 +11,14 @@ import (
 
 // Config menyimpan seluruh konfigurasi runtime WHMCS MCP Server.
 type Config struct {
-	URL        string
-	Identifier string
-	Secret     string
-	AccessKey  string
-	Timeout    time.Duration
-	Debug      bool
+	URL          string
+	Identifier   string
+	Secret       string
+	AccessKey    string
+	HTTPUsername string
+	HTTPPassword string
+	Timeout      time.Duration
+	Debug        bool
 }
 
 const (
@@ -54,6 +56,22 @@ func Load() (*Config, error) {
 		accessKey = strings.TrimSpace(os.Getenv("WHMCS_ACCESS_KEY"))
 	}
 
+	// Dukungan HTTP Basic Authentication (misal untuk proteksi Nginx htpasswd / Cloudflare)
+	httpUser := strings.TrimSpace(os.Getenv("WHMCS_HTTP_USERNAME"))
+	httpPass := strings.TrimSpace(os.Getenv("WHMCS_HTTP_PASSWORD"))
+
+	// Jika tidak ditentukan di env terpisah, ekstrak kredensial dari URL jika ada (misal: https://user:pass@host/)
+	if parsedURL.User != nil {
+		if httpUser == "" {
+			httpUser = parsedURL.User.Username()
+		}
+		if httpPass == "" {
+			if p, ok := parsedURL.User.Password(); ok {
+				httpPass = p
+			}
+		}
+	}
+
 	timeout := DefaultTimeout
 	if timeoutStr := strings.TrimSpace(os.Getenv("WHMCS_TIMEOUT")); timeoutStr != "" {
 		if d, err := time.ParseDuration(timeoutStr); err == nil && d > 0 {
@@ -67,11 +85,13 @@ func Load() (*Config, error) {
 	}
 
 	return &Config{
-		URL:        rawURL,
-		Identifier: identifier,
-		Secret:     secret,
-		AccessKey:  accessKey,
-		Timeout:    timeout,
-		Debug:      debug,
+		URL:          rawURL,
+		Identifier:   identifier,
+		Secret:       secret,
+		AccessKey:    accessKey,
+		HTTPUsername: httpUser,
+		HTTPPassword: httpPass,
+		Timeout:      timeout,
+		Debug:        debug,
 	}, nil
 }

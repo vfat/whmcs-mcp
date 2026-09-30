@@ -166,3 +166,36 @@ func TestClient_ExecuteContextCanceled(t *testing.T) {
 		t.Fatal("expected error for canceled context, got nil")
 	}
 }
+
+func TestClient_ExecuteHTTPBasicAuth(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, pass, ok := r.BasicAuth()
+		if !ok || user != "admin" || pass != "secretpass" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]string{"result": "success"})
+	}))
+	defer server.Close()
+
+	cfg := &config.Config{
+		URL:          server.URL,
+		Identifier:   "id",
+		Secret:       "sec",
+		HTTPUsername: "admin",
+		HTTPPassword: "secretpass",
+		Timeout:      5 * time.Second,
+	}
+
+	client := whmcs.NewClient(cfg)
+	var result map[string]string
+	err := client.Execute(context.Background(), "GetStats", nil, &result)
+	if err != nil {
+		t.Fatalf("expected successful basic auth call, got err: %v", err)
+	}
+	if result["result"] != "success" {
+		t.Errorf("expected result=success, got %v", result)
+	}
+}
+

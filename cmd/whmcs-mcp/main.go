@@ -15,6 +15,11 @@ import (
 )
 
 func main() {
+	if len(os.Args) > 1 && (os.Args[1] == "--version" || os.Args[1] == "-v" || os.Args[1] == "version") {
+		fmt.Printf("whmcs-mcp %s\n", version.Version)
+		return
+	}
+
 	// Logger WAJIB menggunakan os.Stderr untuk menjaga os.Stdout murni protokol JSON-RPC 2.0 (L-001).
 	logLevel := slog.LevelInfo
 	if os.Getenv("WHMCS_DEBUG") == "true" || os.Getenv("WHMCS_DEBUG") == "1" {

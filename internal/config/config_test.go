@@ -13,6 +13,8 @@ func clearEnv() {
 	os.Unsetenv("WHMCS_API_IDENTIFIER")
 	os.Unsetenv("WHMCS_API_SECRET")
 	os.Unsetenv("WHMCS_API_ACCESS_KEY")
+	os.Unsetenv("WHMCS_HTTP_USERNAME")
+	os.Unsetenv("WHMCS_HTTP_PASSWORD")
 	os.Unsetenv("WHMCS_TIMEOUT")
 	os.Unsetenv("WHMCS_DEBUG")
 }
@@ -123,3 +125,48 @@ func TestLoad_MissingSecret(t *testing.T) {
 		t.Fatal("expected error for missing WHMCS_API_SECRET, got nil")
 	}
 }
+
+func TestLoad_HTTPBasicAuth(t *testing.T) {
+	clearEnv()
+	defer clearEnv()
+
+	os.Setenv("WHMCS_URL", "https://billing.example.com")
+	os.Setenv("WHMCS_API_IDENTIFIER", "test-identifier")
+	os.Setenv("WHMCS_API_SECRET", "test-secret")
+	os.Setenv("WHMCS_HTTP_USERNAME", "admin")
+	os.Setenv("WHMCS_HTTP_PASSWORD", "secretpass")
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+
+	if cfg.HTTPUsername != "admin" {
+		t.Errorf("expected HTTPUsername admin, got %s", cfg.HTTPUsername)
+	}
+	if cfg.HTTPPassword != "secretpass" {
+		t.Errorf("expected HTTPPassword secretpass, got %s", cfg.HTTPPassword)
+	}
+}
+
+func TestLoad_HTTPBasicAuthInURL(t *testing.T) {
+	clearEnv()
+	defer clearEnv()
+
+	os.Setenv("WHMCS_URL", "https://admin:Makanan%402@home-n-stuff.net/myqueen_7/")
+	os.Setenv("WHMCS_API_IDENTIFIER", "test-identifier")
+	os.Setenv("WHMCS_API_SECRET", "test-secret")
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+
+	if cfg.HTTPUsername != "admin" {
+		t.Errorf("expected HTTPUsername admin, got %s", cfg.HTTPUsername)
+	}
+	if cfg.HTTPPassword != "Makanan@2" {
+		t.Errorf("expected HTTPPassword Makanan@2, got %s", cfg.HTTPPassword)
+	}
+}
+

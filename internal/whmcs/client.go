@@ -80,6 +80,10 @@ func (c *Client) Execute(ctx context.Context, action string, params interface{},
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Accept", "application/json")
 
+	if c.config.HTTPUsername != "" || c.config.HTTPPassword != "" {
+		req.SetBasicAuth(c.config.HTTPUsername, c.config.HTTPPassword)
+	}
+
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("http request failed: %w", err)
