@@ -20,12 +20,12 @@
 
 | Metric | Count |
 |---|---:|
-| Total targets | 14 |
+| Total targets | 19 |
 | PLANNED | 0 |
 | RED | 0 |
 | GREEN | 0 |
 | REFACTORING | 0 |
-| REFACTORED | 14 |
+| REFACTORED | 19 |
 | BLOCKED | 0 |
 | EXCEPTION | 0 |
 
@@ -49,6 +49,11 @@
 | **TDD-012** | `MCP Tools` | 9 Tools Support Ticket Handlers | Registrasi dan eksekusi alur tiket bantuan, balasan staf, dan internal note | `internal/mcp/tools/tickets_test.go` | `REFACTORED` | `go test -v ./...` PASS (0.043s) | Batch 2 Ticket Tools |
 | **TDD-013** | `MCP Resources`| 3 Resources Batch 2 (`products`, `support`) | Resource URI katalog produk, departemen bantuan, dan status tiket | `internal/mcp/resources/batch2_test.go` | `REFACTORED` | `go test -v ./...` PASS (0.020s) | Batch 2 Resources |
 | **TDD-014** | `MCP Prompts`  | 3 Prompts Batch 2 | Prompt cerdas untuk tiket respon, analisis pendapatan, dan pengingat invoice jatuh tempo | `internal/mcp/prompts/batch2_test.go` | `REFACTORED` | `go test -v ./...` PASS (0.011s) | Batch 2 Prompts |
+| **TDD-015** | `Models` | Struct DTO Domain & Order Models | Serialisasi struct domain (whois, nameservers, lock) dan order/quotes | `internal/model/domain_test.go` | `REFACTORED` | `go test -v ./...` PASS (0.017s) | Kontrak DTO Batch 3 |
+| **TDD-016** | `MCP Tools` | 9 Tools Domain Management Handlers | Registrasi dan eksekusi register, transfer, renew, whois, nameservers, locking, TLD | `internal/mcp/tools/domains_test.go` | `REFACTORED` | `go test -v ./...` PASS (0.038s) | Batch 3 Domain Tools |
+| **TDD-017** | `MCP Tools` | 10 Tools Orders & Quotes Handlers | Registrasi dan eksekusi order lifecycle (accept, cancel, delete, fraud, pending) & quotes | `internal/mcp/tools/orders_test.go` | `REFACTORED` | `go test -v ./...` PASS (0.040s) | Batch 3 Order Tools |
+| **TDD-018** | `MCP Resources`| Resource `whmcs://tld-pricing` | Resource URI katalog daftar harga TLD registrar aktif | `internal/mcp/resources/batch3_test.go` | `REFACTORED` | `go test -v ./...` PASS (0.015s) | Batch 3 Resources |
+| **TDD-019** | `MCP Prompts`  | 2 Prompts Batch 3 (`domain-expiry`, `fraud`) | Prompt cerdas audit kedaluwarsa domain dan investigasi pesanan terindikasi fraud | `internal/mcp/prompts/batch3_test.go` | `REFACTORED` | `go test -v ./...` PASS (0.012s) | Batch 3 Prompts |
 
 ---
 
@@ -555,6 +560,182 @@
 
 ---
 
+### TDD-015 — Domain DTO Models: Domains, Orders & Quotes
+
+- **Component:** `internal/model`
+- **Use case source:** `.ai-doc/Dokumentasi-Fitur.md` §E & §F, `plan/whmcs-mcp-tool/src/whmcs-client.ts`
+- **Acceptance criteria:**
+  1. Struct Request/Response untuk Domain: `DomainWhois`, `DomainRegister`, `DomainTransfer`, `DomainRenew`, `DomainGetNameservers`, `DomainUpdateNameservers`, `DomainGetLockingStatus`, `DomainUpdateLockingStatus`, `GetTLDPricing`.
+  2. Struct Request/Response untuk Orders & Quotes: `GetOrders`, `AcceptOrder`, `CancelOrder`, `DeleteOrder`, `FraudOrder`, `PendingOrder`, `GetQuotes`, `CreateQuote`, `AcceptQuote`, `DeleteQuote`.
+  3. Validasi serialisasi dan parsing JSON roundtrip.
+- **Current status:** `REFACTORED`
+
+#### RED
+- **Test file:** `internal/model/domain_test.go`, `internal/model/order_test.go`
+- **Test name/target:** `TestDomainModels_Serialization`, `TestOrderModels_Serialization`
+- **Command:** `go test -v ./internal/model`
+- **Exit status:** `1`
+- **Failure evidence:** `undefined: model.DomainRegisterRequest`
+- **Verified at:** `2026-09-30 12:10`
+
+#### GREEN
+- **Implementation file(s):** `internal/model/domain.go`, `internal/model/order.go`
+- **Minimal change:** `Define structs with url and json tags for all Batch 3 operations`
+- **Command:** `go test -v ./internal/model`
+- **Exit status:** `0`
+- **Passing evidence:** `PASS: 10/10 tests passed (0.017s)`
+- **Verified at:** `2026-09-30 12:11`
+
+#### REFACTOR
+- **Status:** `REFACTORED`
+- **Changes:** `Add godoc comments and ensure pointer semantics on optional query parameters`
+- **Regression command:** `go test -v ./...`
+- **Exit status:** `0`
+- **Regression evidence:** `PASS: ok github.com/vfat/whmcs-mcp/internal/model`
+- **Verified at:** `2026-09-30 12:12`
+
+---
+
+### TDD-016 — 9 Tools Domain Management Handlers
+
+- **Component:** `internal/mcp/tools`
+- **Use case source:** `.ai-doc/Dokumentasi-Fitur.md` §E
+- **Acceptance criteria:**
+  1. Registrasi 9 tool: `whmcs_register_domain`, `whmcs_transfer_domain`, `whmcs_renew_domain`, `whmcs_get_domain_whois`, `whmcs_get_domain_nameservers`, `whmcs_update_domain_nameservers`, `whmcs_get_domain_lock_status`, `whmcs_update_domain_lock_status`, `whmcs_get_tld_pricing`.
+  2. Handler mengeksekusi aksi WHMCS terkait dan merespons format JSON mcp TextContent.
+- **Current status:** `REFACTORED`
+
+#### RED
+- **Test file:** `internal/mcp/tools/domains_test.go`
+- **Test name/target:** `TestDomainTools_Execution`
+- **Command:** `go test -v ./internal/mcp/tools -run TestDomainTools`
+- **Exit status:** `1`
+- **Failure evidence:** `undefined: RegisterDomainTools`
+- **Verified at:** `2026-09-30 12:11`
+
+#### GREEN
+- **Implementation file(s):** `internal/mcp/tools/domains.go`
+- **Minimal change:** `Implement RegisterDomainTools and all 9 tool handlers`
+- **Command:** `go test -v ./internal/mcp/tools -run TestDomainTools`
+- **Exit status:** `0`
+- **Passing evidence:** `PASS: 9/9 domain tools tests passed (0.038s)`
+- **Verified at:** `2026-09-30 12:11`
+
+#### REFACTOR
+- **Status:** `REFACTORED`
+- **Changes:** `Clean up arguments unmarshaling via parseArguments helper`
+- **Regression command:** `go test -v ./...`
+- **Exit status:** `0`
+- **Regression evidence:** `PASS: ok github.com/vfat/whmcs-mcp/internal/mcp/tools`
+- **Verified at:** `2026-09-30 12:12`
+
+---
+
+### TDD-017 — 10 Tools Orders & Quotes Handlers
+
+- **Component:** `internal/mcp/tools`
+- **Use case source:** `.ai-doc/Dokumentasi-Fitur.md` §F
+- **Acceptance criteria:**
+  1. Registrasi 10 tool: `whmcs_get_orders`, `whmcs_accept_order`, `whmcs_cancel_order`, `whmcs_delete_order`, `whmcs_fraud_order`, `whmcs_pending_order`, `whmcs_get_quotes`, `whmcs_create_quote`, `whmcs_accept_quote`, `whmcs_delete_quote`.
+  2. Handler mengeksekusi aksi WHMCS terkait dan merespons format JSON mcp TextContent.
+- **Current status:** `REFACTORED`
+
+#### RED
+- **Test file:** `internal/mcp/tools/orders_test.go`
+- **Test name/target:** `TestOrderTools_Execution`
+- **Command:** `go test -v ./internal/mcp/tools -run TestOrderTools`
+- **Exit status:** `1`
+- **Failure evidence:** `undefined: RegisterOrderTools`
+- **Verified at:** `2026-09-30 12:11`
+
+#### GREEN
+- **Implementation file(s):** `internal/mcp/tools/orders.go`
+- **Minimal change:** `Implement RegisterOrderTools and all 10 tool handlers`
+- **Command:** `go test -v ./internal/mcp/tools -run TestOrderTools`
+- **Exit status:** `0`
+- **Passing evidence:** `PASS: 10/10 order & quote tools tests passed (0.040s)`
+- **Verified at:** `2026-09-30 12:11`
+
+#### REFACTOR
+- **Status:** `REFACTORED`
+- **Changes:** `Ensure safe type conversions and structured descriptions`
+- **Regression command:** `go test -v ./...`
+- **Exit status:** `0`
+- **Regression evidence:** `PASS: ok github.com/vfat/whmcs-mcp/internal/mcp/tools`
+- **Verified at:** `2026-09-30 12:12`
+
+---
+
+### TDD-018 — Resource `whmcs://tld-pricing`
+
+- **Component:** `internal/mcp/resources`
+- **Use case source:** `.ai-doc/Dokumentasi-Fitur.md` §E
+- **Acceptance criteria:**
+  1. Handler resource membaca `GetTLDPricing` dari WHMCS API.
+  2. Mengembalikan data dalam MIME `application/json`.
+- **Current status:** `REFACTORED`
+
+#### RED
+- **Test file:** `internal/mcp/resources/batch3_test.go`
+- **Test name/target:** `TestBatch3Resources_Execution`
+- **Command:** `go test -v ./internal/mcp/resources -run TestBatch3Resources`
+- **Exit status:** `1`
+- **Failure evidence:** `undefined: RegisterBatch3Resources`
+- **Verified at:** `2026-09-30 12:11`
+
+#### GREEN
+- **Implementation file(s):** `internal/mcp/resources/batch3.go`
+- **Minimal change:** `Implement RegisterBatch3Resources for whmcs://tld-pricing`
+- **Command:** `go test -v ./internal/mcp/resources -run TestBatch3Resources`
+- **Exit status:** `0`
+- **Passing evidence:** `PASS: 2/2 batch 3 resource test cases passed (0.015s)`
+- **Verified at:** `2026-09-30 12:11`
+
+#### REFACTOR
+- **Status:** `REFACTORED`
+- **Changes:** `Shared JSON response formatter with Batch 1/2`
+- **Regression command:** `go test -v ./...`
+- **Exit status:** `0`
+- **Regression evidence:** `PASS: ok github.com/vfat/whmcs-mcp/internal/mcp/resources`
+- **Verified at:** `2026-09-30 12:12`
+
+---
+
+### TDD-019 — 2 Prompts Batch 3: Domain Expiry Audit & Fraud Investigation
+
+- **Component:** `internal/mcp/prompts`
+- **Use case source:** `.ai-doc/Dokumentasi-Fitur.md` §J
+- **Acceptance criteria:**
+  1. Prompt `domain-expiry-audit` memformat instruksi audit kedaluwarsa domain.
+  2. Prompt `fraud-investigation` memformat instruksi investigasi keamanan pesanan.
+- **Current status:** `REFACTORED`
+
+#### RED
+- **Test file:** `internal/mcp/prompts/batch3_test.go`
+- **Test name/target:** `TestBatch3Prompts_Execution`
+- **Command:** `go test -v ./internal/mcp/prompts -run TestBatch3Prompts`
+- **Exit status:** `1`
+- **Failure evidence:** `undefined: RegisterBatch3Prompts`
+- **Verified at:** `2026-09-30 12:11`
+
+#### GREEN
+- **Implementation file(s):** `internal/mcp/prompts/batch3.go`
+- **Minimal change:** `Implement RegisterBatch3Prompts with prompt definitions and message builders`
+- **Command:** `go test -v ./internal/mcp/prompts -run TestBatch3Prompts`
+- **Exit status:** `0`
+- **Passing evidence:** `PASS: 3/3 prompt test cases passed (0.012s)`
+- **Verified at:** `2026-09-30 12:11`
+
+#### REFACTOR
+- **Status:** `REFACTORED`
+- **Changes:** `Composition root wiring in cmd/whmcs-mcp/main.go updated with all Batch 3 components`
+- **Regression command:** `go test -v ./...`
+- **Exit status:** `0`
+- **Regression evidence:** `PASS: 137/137 tests passed across entire repository`
+- **Verified at:** `2026-09-30 12:14`
+
+---
+
 ## 5. Blockers and Exceptions
 
 *Tidak ada blocker aktif saat ini.*
@@ -576,6 +757,11 @@
 | `2026-09-30` | TDD-012 | `Complete` | 9 Tools Support Ticket Handlers | `internal/mcp/tools/tickets_test.go` PASS |
 | `2026-09-30` | TDD-013 | `Complete` | 3 Resources Batch 2 (`products`, `support`) | `internal/mcp/resources/batch2_test.go` PASS |
 | `2026-09-30` | TDD-014 | `Complete` | 3 Prompts Batch 2 (`ticket-response`, `revenue-report`, `bulk-invoice-reminder`) | `internal/mcp/prompts/batch2_test.go` PASS |
+| `2026-09-30` | TDD-015 | `Complete` | Domain DTO Models Domain & Order | `internal/model/domain_test.go` PASS |
+| `2026-09-30` | TDD-016 | `Complete` | 9 Tools Domain Management Handlers | `internal/mcp/tools/domains_test.go` PASS |
+| `2026-09-30` | TDD-017 | `Complete` | 10 Tools Orders & Quotes Handlers | `internal/mcp/tools/orders_test.go` PASS |
+| `2026-09-30` | TDD-018 | `Complete` | Resource `whmcs://tld-pricing` | `internal/mcp/resources/batch3_test.go` PASS |
+| `2026-09-30` | TDD-019 | `Complete` | 2 Prompts Batch 3 (`domain-expiry-audit`, `fraud-investigation`) | `internal/mcp/prompts/batch3_test.go` PASS |
 
 ---
 
