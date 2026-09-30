@@ -20,12 +20,12 @@
 
 | Metric | Count |
 |---|---:|
-| Total targets | 19 |
+| Total targets | 24 |
 | PLANNED | 0 |
 | RED | 0 |
 | GREEN | 0 |
 | REFACTORING | 0 |
-| REFACTORED | 19 |
+| REFACTORED | 24 |
 | BLOCKED | 0 |
 | EXCEPTION | 0 |
 
@@ -54,6 +54,11 @@
 | **TDD-017** | `MCP Tools` | 10 Tools Orders & Quotes Handlers | Registrasi dan eksekusi order lifecycle (accept, cancel, delete, fraud, pending) & quotes | `internal/mcp/tools/orders_test.go` | `REFACTORED` | `go test -v ./...` PASS (0.040s) | Batch 3 Order Tools |
 | **TDD-018** | `MCP Resources`| Resource `whmcs://tld-pricing` | Resource URI katalog daftar harga TLD registrar aktif | `internal/mcp/resources/batch3_test.go` | `REFACTORED` | `go test -v ./...` PASS (0.015s) | Batch 3 Resources |
 | **TDD-019** | `MCP Prompts`  | 2 Prompts Batch 3 (`domain-expiry`, `fraud`) | Prompt cerdas audit kedaluwarsa domain dan investigasi pesanan terindikasi fraud | `internal/mcp/prompts/batch3_test.go` | `REFACTORED` | `go test -v ./...` PASS (0.012s) | Batch 3 Prompts |
+| **TDD-020** | `Models` | Struct DTO Provisioning & Marketing Models | Serialisasi struct modul, server, afiliasi, promosi, dan audit log WHMCS | `internal/model/provisioning_test.go` | `REFACTORED` | `go test -v ./...` PASS (0.006s) | Kontrak DTO Batch 4 |
+| **TDD-021** | `MCP Tools` | 6 Tools Provisioning & Servers Handlers | Registrasi dan eksekusi server listing & module command (create, suspend, unsuspend, terminate, password) | `internal/mcp/tools/provisioning_test.go` | `REFACTORED` | `go test -v ./...` PASS (0.016s) | Batch 4 Provisioning Tools |
+| **TDD-022** | `MCP Tools` | 6 Tools Marketing & Admin Extra Handlers | Registrasi dan eksekusi afiliasi, aktivasi, promosi, audit log, templat email, dan delete client | `internal/mcp/tools/marketing_test.go` | `REFACTORED` | `go test -v ./...` PASS (0.017s) | Batch 4 Marketing & Admin Tools |
+| **TDD-023** | `MCP Resources`| 2 Resources Batch 4 (`servers`, `promotions`) | Resource URI katalog server aktif dan promosi kupon diskon sistem | `internal/mcp/resources/batch4_test.go` | `REFACTORED` | `go test -v ./...` PASS (0.021s) | Batch 4 Resources |
+| **TDD-024** | `MCP Prompts`  | 1 Prompt Batch 4 (`new-product-setup`) | Prompt cerdas panduan pembuatan paket hosting baru lengkap dengan modul server | `internal/mcp/prompts/batch4_test.go` | `REFACTORED` | `go test -v ./...` PASS (0.011s) | Batch 4 Prompts |
 
 ---
 
@@ -736,6 +741,181 @@
 
 ---
 
+### TDD-020 — Domain DTO Models: Provisioning & Marketing
+
+- **Component:** `internal/model`
+- **Use case source:** `.ai-doc/Dokumentasi-Fitur.md` §G & §I, `plan/whmcs-mcp-tool/src/whmcs-client.ts`
+- **Acceptance criteria:**
+  1. Struct Request/Response untuk Provisioning: `GetServers`, `ModuleCreate`, `ModuleSuspend`, `ModuleUnsuspend`, `ModuleTerminate`, `ModuleChangePassword`.
+  2. Struct Request/Response untuk Marketing & Extra: `GetAffiliates`, `AffiliateActivate`, `GetPromotions`, `LogActivity`, `GetEmailTemplates`, `DeleteClient`.
+- **Current status:** `REFACTORED`
+
+#### RED
+- **Test file:** `internal/model/provisioning_test.go`, `internal/model/marketing_test.go`
+- **Test name/target:** `TestProvisioningModels_Serialization`, `TestMarketingModels_Serialization`
+- **Command:** `go test -v ./internal/model`
+- **Exit status:** `1`
+- **Failure evidence:** `undefined: model.GetServersRequest, undefined: model.GetAffiliatesRequest`
+- **Verified at:** `2026-09-30 12:18`
+
+#### GREEN
+- **Implementation file(s):** `internal/model/provisioning.go`, `internal/model/marketing.go`
+- **Minimal change:** `Implement DTO structs with url and json tags for all Batch 4 operations`
+- **Command:** `go test -v ./internal/model`
+- **Exit status:** `0`
+- **Passing evidence:** `PASS: 12/12 model suites passed (0.006s)`
+- **Verified at:** `2026-09-30 12:19`
+
+#### REFACTOR
+- **Status:** `REFACTORED`
+- **Changes:** `Full godoc coverage and json omitempty semantics`
+- **Regression command:** `go test -v ./...`
+- **Exit status:** `0`
+- **Regression evidence:** `PASS: ok github.com/vfat/whmcs-mcp/internal/model`
+- **Verified at:** `2026-09-30 12:20`
+
+---
+
+### TDD-021 — 6 Tools Provisioning & Server Handlers
+
+- **Component:** `internal/mcp/tools`
+- **Use case source:** `.ai-doc/Dokumentasi-Fitur.md` §G
+- **Acceptance criteria:**
+  1. Registrasi 6 tool: `whmcs_get_servers`, `whmcs_module_create`, `whmcs_module_suspend`, `whmcs_module_unsuspend`, `whmcs_module_terminate`, `whmcs_module_change_password`.
+  2. Handler mengeksekusi aksi WHMCS API dan merespons via MCP TextContent.
+- **Current status:** `REFACTORED`
+
+#### RED
+- **Test file:** `internal/mcp/tools/provisioning_test.go`
+- **Test name/target:** `TestProvisioningTools_Execution`
+- **Command:** `go test -v ./internal/mcp/tools -run TestProvisioningTools`
+- **Exit status:** `1`
+- **Failure evidence:** `undefined: tools.RegisterProvisioningTools`
+- **Verified at:** `2026-09-30 12:20`
+
+#### GREEN
+- **Implementation file(s):** `internal/mcp/tools/provisioning.go`
+- **Minimal change:** `Implement RegisterProvisioningTools and all 6 tool handlers`
+- **Command:** `go test -v ./internal/mcp/tools -run TestProvisioningTools`
+- **Exit status:** `0`
+- **Passing evidence:** `PASS: 6/6 provisioning tool tests passed (0.016s)`
+- **Verified at:** `2026-09-30 12:20`
+
+#### REFACTOR
+- **Status:** `REFACTORED`
+- **Changes:** `Clean parameter verification and safe error responses`
+- **Regression command:** `go test -v ./...`
+- **Exit status:** `0`
+- **Regression evidence:** `PASS: ok github.com/vfat/whmcs-mcp/internal/mcp/tools`
+- **Verified at:** `2026-09-30 12:21`
+
+---
+
+### TDD-022 — 6 Tools Marketing & Admin Extra Handlers
+
+- **Component:** `internal/mcp/tools`
+- **Use case source:** `.ai-doc/Dokumentasi-Fitur.md` §I
+- **Acceptance criteria:**
+  1. Registrasi 6 tool: `whmcs_get_affiliates`, `whmcs_activate_affiliate`, `whmcs_get_promotions`, `whmcs_log_activity`, `whmcs_get_email_templates`, `whmcs_delete_client`.
+  2. Handler mengeksekusi aksi WHMCS API dan merespons via MCP TextContent.
+- **Current status:** `REFACTORED`
+
+#### RED
+- **Test file:** `internal/mcp/tools/marketing_test.go`
+- **Test name/target:** `TestMarketingTools_Execution`
+- **Command:** `go test -v ./internal/mcp/tools -run TestMarketingTools`
+- **Exit status:** `1`
+- **Failure evidence:** `undefined: tools.RegisterMarketingTools`
+- **Verified at:** `2026-09-30 12:20`
+
+#### GREEN
+- **Implementation file(s):** `internal/mcp/tools/marketing.go`
+- **Minimal change:** `Implement RegisterMarketingTools and all 6 tool handlers`
+- **Command:** `go test -v ./internal/mcp/tools -run TestMarketingTools`
+- **Exit status:** `0`
+- **Passing evidence:** `PASS: 6/6 marketing & extra tool tests passed (0.017s)`
+- **Verified at:** `2026-09-30 12:20`
+
+#### REFACTOR
+- **Status:** `REFACTORED`
+- **Changes:** `Ensure exact match with parameter schema from index.ts`
+- **Regression command:** `go test -v ./...`
+- **Exit status:** `0`
+- **Regression evidence:** `PASS: ok github.com/vfat/whmcs-mcp/internal/mcp/tools`
+- **Verified at:** `2026-09-30 12:21`
+
+---
+
+### TDD-023 — 2 Resources Batch 4: Servers & Promotions
+
+- **Component:** `internal/mcp/resources`
+- **Use case source:** `.ai-doc/Dokumentasi-Fitur.md` §G & §I
+- **Acceptance criteria:**
+  1. Registrasi resource `whmcs://servers` dan `whmcs://promotions`.
+  2. Mengembalikan data dalam format JSON terstruktur.
+- **Current status:** `REFACTORED`
+
+#### RED
+- **Test file:** `internal/mcp/resources/batch4_test.go`
+- **Test name/target:** `TestBatch4Resources_Read`
+- **Command:** `go test -v ./internal/mcp/resources -run TestBatch4Resources`
+- **Exit status:** `1`
+- **Failure evidence:** `undefined: resources.RegisterBatch4Resources`
+- **Verified at:** `2026-09-30 12:21`
+
+#### GREEN
+- **Implementation file(s):** `internal/mcp/resources/batch4.go`
+- **Minimal change:** `Implement RegisterBatch4Resources for servers and promotions`
+- **Command:** `go test -v ./internal/mcp/resources -run TestBatch4Resources`
+- **Exit status:** `0`
+- **Passing evidence:** `PASS: 2/2 resource tests passed (0.013s)`
+- **Verified at:** `2026-09-30 12:21`
+
+#### REFACTOR
+- **Status:** `REFACTORED`
+- **Changes:** `Consistent formatResourceJSON helper utilization`
+- **Regression command:** `go test -v ./...`
+- **Exit status:** `0`
+- **Regression evidence:** `PASS: ok github.com/vfat/whmcs-mcp/internal/mcp/resources`
+- **Verified at:** `2026-09-30 12:22`
+
+---
+
+### TDD-024 — Prompt Batch 4: New Product Setup Guide
+
+- **Component:** `internal/mcp/prompts`
+- **Use case source:** `.ai-doc/Dokumentasi-Fitur.md` §J
+- **Acceptance criteria:**
+  1. Registrasi prompt `new-product-setup` dengan argumen `productName`, `productType`, `monthlyPrice`, `serverType`.
+  2. Merender instruksi komprehensif penyiapan produk hosting di WHMCS.
+- **Current status:** `REFACTORED`
+
+#### RED
+- **Test file:** `internal/mcp/prompts/batch4_test.go`
+- **Test name/target:** `TestBatch4Prompts_Execution`
+- **Command:** `go test -v ./internal/mcp/prompts -run TestBatch4Prompts`
+- **Exit status:** `1`
+- **Failure evidence:** `undefined: prompts.RegisterBatch4Prompts`
+- **Verified at:** `2026-09-30 12:21`
+
+#### GREEN
+- **Implementation file(s):** `internal/mcp/prompts/batch4.go`
+- **Minimal change:** `Implement RegisterBatch4Prompts with prompt definition and message builder`
+- **Command:** `go test -v ./internal/mcp/prompts -run TestBatch4Prompts`
+- **Exit status:** `0`
+- **Passing evidence:** `PASS: 1/1 prompt test passed (0.012s)`
+- **Verified at:** `2026-09-30 12:22`
+
+#### REFACTOR
+- **Status:** `REFACTORED`
+- **Changes:** `Composition root wiring in cmd/whmcs-mcp/main.go updated with all Batch 4 components. Full parity integration test TestFullServerParity implemented.`
+- **Regression command:** `go test -v ./...`
+- **Exit status:** `0`
+- **Regression evidence:** `PASS: 165/165 tests passed across entire repository, 100% parity verified (62 tools, 11 resources, 8 prompts)`
+- **Verified at:** `2026-09-30 12:22`
+
+---
+
 ## 5. Blockers and Exceptions
 
 *Tidak ada blocker aktif saat ini.*
@@ -762,6 +942,11 @@
 | `2026-09-30` | TDD-017 | `Complete` | 10 Tools Orders & Quotes Handlers | `internal/mcp/tools/orders_test.go` PASS |
 | `2026-09-30` | TDD-018 | `Complete` | Resource `whmcs://tld-pricing` | `internal/mcp/resources/batch3_test.go` PASS |
 | `2026-09-30` | TDD-019 | `Complete` | 2 Prompts Batch 3 (`domain-expiry-audit`, `fraud-investigation`) | `internal/mcp/prompts/batch3_test.go` PASS |
+| `2026-09-30` | TDD-020 | `Complete` | Domain DTO Models Provisioning & Marketing | `internal/model/provisioning_test.go` PASS |
+| `2026-09-30` | TDD-021 | `Complete` | 6 Tools Provisioning & Server Handlers | `internal/mcp/tools/provisioning_test.go` PASS |
+| `2026-09-30` | TDD-022 | `Complete` | 6 Tools Marketing & Admin Extra Handlers | `internal/mcp/tools/marketing_test.go` PASS |
+| `2026-09-30` | TDD-023 | `Complete` | 2 Resources Batch 4 (`servers`, `promotions`) | `internal/mcp/resources/batch4_test.go` PASS |
+| `2026-09-30` | TDD-024 | `Complete` | 1 Prompt Batch 4 (`new-product-setup`) | `internal/mcp/prompts/batch4_test.go` PASS |
 
 ---
 

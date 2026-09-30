@@ -56,6 +56,12 @@ func main() {
 	resources.RegisterBatch3Resources(srv.MCPServer(), client)
 	prompts.RegisterBatch3Prompts(srv.MCPServer())
 
+	// Registrasi komponen Batch 4 (Final Batch)
+	tools.RegisterProvisioningTools(srv.MCPServer(), client)
+	tools.RegisterMarketingTools(srv.MCPServer(), client)
+	resources.RegisterBatch4Resources(srv.MCPServer(), client)
+	prompts.RegisterBatch4Prompts(srv.MCPServer())
+
 	slog.Info("registered MCP components",
 		"tools", len(srv.MCPServer().ListTools()),
 		"resources", len(srv.MCPServer().ListResources()),
