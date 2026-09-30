@@ -4,6 +4,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/vfat/whmcs-mcp/internal/config"
+	"github.com/vfat/whmcs-mcp/internal/version"
 	"github.com/vfat/whmcs-mcp/internal/whmcs"
 )
 
@@ -18,7 +19,7 @@ type Server struct {
 func NewServer(cfg *config.Config, client *whmcs.Client) *Server {
 	mcpSrv := server.NewMCPServer(
 		"whmcs-mcp",
-		"1.0.0",
+		version.Version,
 		server.WithToolCapabilities(true),
 		server.WithPromptCapabilities(true),
 		server.WithResourceCapabilities(true, true),

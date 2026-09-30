@@ -10,6 +10,7 @@ import (
 	"github.com/vfat/whmcs-mcp/internal/mcp/prompts"
 	"github.com/vfat/whmcs-mcp/internal/mcp/resources"
 	"github.com/vfat/whmcs-mcp/internal/mcp/tools"
+	"github.com/vfat/whmcs-mcp/internal/version"
 	"github.com/vfat/whmcs-mcp/internal/whmcs"
 )
 
@@ -32,7 +33,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	slog.Info("initializing WHMCS MCP Server", "url", cfg.URL, "timeout", cfg.Timeout)
+	slog.Info("initializing WHMCS MCP Server", "version", version.Version, "url", cfg.URL, "timeout", cfg.Timeout)
 
 	client := whmcs.NewClient(cfg)
 	srv := mcpServer.NewServer(cfg, client)

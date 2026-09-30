@@ -1,0 +1,8 @@
+.git
+.github
+.ai-doc
+bin
+dist
+coverage.out
+*.log
+.env
