@@ -1,7 +1,7 @@
 # Binaries
 bin/
 dist/
-whmcs-mcp
+/whmcs-mcp
 *.exe
 *.dll
 *.so
