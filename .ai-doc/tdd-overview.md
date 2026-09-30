@@ -20,12 +20,12 @@
 
 | Metric | Count |
 |---|---:|
-| Total targets | 9 |
+| Total targets | 14 |
 | PLANNED | 0 |
 | RED | 0 |
 | GREEN | 0 |
 | REFACTORING | 0 |
-| REFACTORED | 9 |
+| REFACTORED | 14 |
 | BLOCKED | 0 |
 | EXCEPTION | 0 |
 
@@ -44,6 +44,11 @@
 | **TDD-007** | `MCP Tools` | 9 Tools System Administration Handlers | Registrasi dan eksekusi tools sistem (`whmcs_get_stats`, `whmcs_get_admin_users`, dsb.) | `internal/mcp/tools/system_test.go` | `REFACTORED` | `go test -v ./...` PASS (0.029s) | Batch 1 System Tools |
 | **TDD-008** | `MCP Resources`| 5 Resources Skema `whmcs://*` | Membaca resource data sistem instan (`stats`, `admin-users`, `currencies`, dll.) | `internal/mcp/resources/resources_test.go` | `REFACTORED` | `go test -v ./...` PASS (0.021s) | Batch 1 Resources |
 | **TDD-009** | `MCP Prompts`  | 2 Prompts Interaktif Klien | Menghasilkan instruksi terstruktur untuk onboarding dan audit kesehatan klien | `internal/mcp/prompts/prompts_test.go` | `REFACTORED` | `go test -v ./...` PASS (0.011s) | Batch 1 Prompts |
+| **TDD-010** | `Models` | Struct DTO Billing, Product & Tickets | Serialisasi model produk, invoice, transaksi, dan tiket bantuan pelanggan | `internal/model/billing_test.go` | `REFACTORED` | `go test -v ./...` PASS (0.005s) | Kontrak DTO Batch 2 |
+| **TDD-011** | `MCP Tools` | 9 Tools Billing & Product Handlers | Registrasi dan eksekusi katalog produk, invoice, mutasi pembayaran kas, dan kredit | `internal/mcp/tools/billing_test.go` | `REFACTORED` | `go test -v ./...` PASS (0.046s) | Batch 2 Billing Tools |
+| **TDD-012** | `MCP Tools` | 9 Tools Support Ticket Handlers | Registrasi dan eksekusi alur tiket bantuan, balasan staf, dan internal note | `internal/mcp/tools/tickets_test.go` | `REFACTORED` | `go test -v ./...` PASS (0.043s) | Batch 2 Ticket Tools |
+| **TDD-013** | `MCP Resources`| 3 Resources Batch 2 (`products`, `support`) | Resource URI katalog produk, departemen bantuan, dan status tiket | `internal/mcp/resources/batch2_test.go` | `REFACTORED` | `go test -v ./...` PASS (0.020s) | Batch 2 Resources |
+| **TDD-014** | `MCP Prompts`  | 3 Prompts Batch 2 | Prompt cerdas untuk tiket respon, analisis pendapatan, dan pengingat invoice jatuh tempo | `internal/mcp/prompts/batch2_test.go` | `REFACTORED` | `go test -v ./...` PASS (0.011s) | Batch 2 Prompts |
 
 ---
 
@@ -372,6 +377,184 @@
 
 ---
 
+### TDD-010 — Domain DTO Models (Billing, Products & Support Tickets)
+
+- **Component:** `internal/model`
+- **Use case source:** `.ai-doc/Dokumentasi-Fitur.md` §2.B, §2.C, §2.D
+- **Acceptance criteria:**
+  1. Struct request mendefinisikan tag `json` dan `url` (termasuk multidimensi array line item `itemdescription[0]` dsb.).
+  2. Struct response unmarshaling JSON WHMCS envelope (`invoices`, `products`, `tickets`, `departments`, `statuses`).
+- **Current status:** `REFACTORED`
+
+#### RED
+- **Test file:** `internal/model/billing_test.go`, `internal/model/ticket_test.go`
+- **Test name/target:** `TestBillingModels_Serialization`, `TestProductModels_Serialization`, `TestTicketModels_Serialization`
+- **Command:** `go test -v ./internal/model`
+- **Exit status:** `1`
+- **Failure evidence:** `undefined: model.CreateInvoiceRequest, model.GetInvoicesResponse, model.OpenTicketRequest`
+- **Verified at:** `2026-09-30 12:03`
+
+#### GREEN
+- **Implementation file(s):** `internal/model/product.go`, `internal/model/billing.go`, `internal/model/ticket.go`
+- **Minimal change:** `Implement product, billing, and ticket structs with json and url struct tags`
+- **Command:** `go test -v ./internal/model`
+- **Exit status:** `0`
+- **Passing evidence:** `PASS: 7/7 model tests passed (0.005s)`
+- **Verified at:** `2026-09-30 12:04`
+
+#### REFACTOR
+- **Status:** `REFACTORED`
+- **Changes:** `Support strong types for invoice line items and ticket note attachments`
+- **Regression command:** `go test -v ./...`
+- **Exit status:** `0`
+- **Regression evidence:** `PASS: All models verified`
+- **Verified at:** `2026-09-30 12:04`
+
+---
+
+### TDD-011 — Billing & Product Tools Handlers (9 Tools)
+
+- **Component:** `internal/mcp/tools`
+- **Use case source:** `.ai-doc/Dokumentasi-Fitur.md` §2.B & §2.C, `plan/whmcs-mcp-tool/src/index.ts`
+- **Acceptance criteria:**
+  1. Mendaftarkan 9 tools: `whmcs_get_products`, `whmcs_get_product_groups`, `whmcs_get_invoices`, `whmcs_get_invoice`, `whmcs_create_invoice`, `whmcs_update_invoice`, `whmcs_add_payment`, `whmcs_apply_credit`, `whmcs_get_transactions`.
+  2. Validasi input arguments wajib (`invoiceid`, `userid`, `transid`, `gateway`, `amount`).
+  3. Memanggil action API WHMCS yang tepat dan mengembalikan tool result.
+- **Current status:** `REFACTORED`
+
+#### RED
+- **Test file:** `internal/mcp/tools/products_test.go`, `internal/mcp/tools/billing_test.go`
+- **Test name/target:** `TestRegisterBillingTools_AllPresent`, `TestBillingTools_Execution`, `TestRegisterProductTools_AllPresent`, `TestProductTools_Execution`
+- **Command:** `go test -v ./internal/mcp/tools`
+- **Exit status:** `1`
+- **Failure evidence:** `undefined: tools.RegisterBillingTools, tools.RegisterProductTools`
+- **Verified at:** `2026-09-30 12:04`
+
+#### GREEN
+- **Implementation file(s):** `internal/mcp/tools/products.go`, `internal/mcp/tools/billing.go`
+- **Minimal change:** `Implement RegisterProductTools and RegisterBillingTools with validation and API dispatching`
+- **Command:** `go test -v ./internal/mcp/tools`
+- **Exit status:** `0`
+- **Passing evidence:** `PASS: 19/19 test cases in internal/mcp/tools passed (0.046s)`
+- **Verified at:** `2026-09-30 12:05`
+
+#### REFACTOR
+- **Status:** `REFACTORED`
+- **Changes:** `Unified formatJSONResult helper across tools`
+- **Regression command:** `go test -v ./...`
+- **Exit status:** `0`
+- **Regression evidence:** `PASS: All tool tests pass`
+- **Verified at:** `2026-09-30 12:05`
+
+---
+
+### TDD-012 — Support Ticket Tools Handlers (9 Tools)
+
+- **Component:** `internal/mcp/tools`
+- **Use case source:** `.ai-doc/Dokumentasi-Fitur.md` §2.D, `plan/whmcs-mcp-tool/src/index.ts`
+- **Acceptance criteria:**
+  1. Mendaftarkan 9 tools: `whmcs_get_tickets`, `whmcs_get_ticket`, `whmcs_open_ticket`, `whmcs_add_ticket_reply`, `whmcs_add_ticket_note`, `whmcs_update_ticket`, `whmcs_delete_ticket`, `whmcs_get_support_departments`, `whmcs_get_support_statuses`.
+  2. Validasi input arguments wajib (`ticketid`, `deptid`, `subject`, `message`).
+  3. Memanggil action API WHMCS dan mengembalikan JSON tool result.
+- **Current status:** `REFACTORED`
+
+#### RED
+- **Test file:** `internal/mcp/tools/tickets_test.go`
+- **Test name/target:** `TestRegisterTicketTools_AllPresent`, `TestTicketTools_Execution`
+- **Command:** `go test -v ./internal/mcp/tools`
+- **Exit status:** `1`
+- **Failure evidence:** `undefined: tools.RegisterTicketTools`
+- **Verified at:** `2026-09-30 12:05`
+
+#### GREEN
+- **Implementation file(s):** `internal/mcp/tools/tickets.go`
+- **Minimal change:** `Implement RegisterTicketTools with all 9 support ticket tool definitions and handlers`
+- **Command:** `go test -v ./internal/mcp/tools`
+- **Exit status:** `0`
+- **Passing evidence:** `PASS: 14/14 subtests in TestTicketTools_Execution passed (0.043s)`
+- **Verified at:** `2026-09-30 12:05`
+
+#### REFACTOR
+- **Status:** `REFACTORED`
+- **Changes:** `Clean validation checks for note content and reply payloads`
+- **Regression command:** `go test -v ./...`
+- **Exit status:** `0`
+- **Regression evidence:** `PASS: 28/28 tools across clients, system, billing, products, tickets verified`
+- **Verified at:** `2026-09-30 12:06`
+
+---
+
+### TDD-013 — Batch 2 MCP Resources (3 Resources)
+
+- **Component:** `internal/mcp/resources`
+- **Use case source:** `.ai-doc/Dokumentasi-Fitur.md` §2.B & §2.D, `plan/whmcs-mcp-tool/src/index.ts`
+- **Acceptance criteria:**
+  1. Mendaftarkan 3 resources: `whmcs://products`, `whmcs://support/departments`, `whmcs://support/statuses`.
+  2. Handler mengeksekusi API call dan mengembalikan `TextResourceContents` JSON.
+- **Current status:** `REFACTORED`
+
+#### RED
+- **Test file:** `internal/mcp/resources/batch2_test.go`
+- **Test name/target:** `TestRegisterBatch2Resources_AllPresent`, `TestBatch2Resources_Read`
+- **Command:** `go test -v ./internal/mcp/resources`
+- **Exit status:** `1`
+- **Failure evidence:** `undefined: resources.RegisterBatch2Resources`
+- **Verified at:** `2026-09-30 12:06`
+
+#### GREEN
+- **Implementation file(s):** `internal/mcp/resources/batch2.go`
+- **Minimal change:** `Implement RegisterBatch2Resources with product and support resource definitions`
+- **Command:** `go test -v ./internal/mcp/resources`
+- **Exit status:** `0`
+- **Passing evidence:** `PASS: 8/8 resources across Batch 1 and Batch 2 passed (0.020s)`
+- **Verified at:** `2026-09-30 12:06`
+
+#### REFACTOR
+- **Status:** `REFACTORED`
+- **Changes:** `Shared formatResourceJSON error recovery`
+- **Regression command:** `go test -v ./...`
+- **Exit status:** `0`
+- **Regression evidence:** `PASS: ok github.com/vfat/whmcs-mcp/internal/mcp/resources`
+- **Verified at:** `2026-09-30 12:06`
+
+---
+
+### TDD-014 — Batch 2 MCP Prompts (3 Prompts)
+
+- **Component:** `internal/mcp/prompts`
+- **Use case source:** `.ai-doc/Dokumentasi-Fitur.md` §2.J, `plan/whmcs-mcp-tool/src/index.ts`
+- **Acceptance criteria:**
+  1. Mendaftarkan 3 prompts: `ticket-response`, `revenue-report`, `bulk-invoice-reminder`.
+  2. Validasi argumen wajib (`ticketId`, `issueType`, `period`, `daysOverdue`).
+  3. Memformulasikan panduan interaktif komprehensif.
+- **Current status:** `REFACTORED`
+
+#### RED
+- **Test file:** `internal/mcp/prompts/batch2_test.go`
+- **Test name/target:** `TestRegisterBatch2Prompts_AllPresent`, `TestBatch2Prompts_Execution`
+- **Command:** `go test -v ./internal/mcp/prompts`
+- **Exit status:** `1`
+- **Failure evidence:** `undefined: prompts.RegisterBatch2Prompts`
+- **Verified at:** `2026-09-30 12:06`
+
+#### GREEN
+- **Implementation file(s):** `internal/mcp/prompts/batch2.go`
+- **Minimal change:** `Implement RegisterBatch2Prompts with prompt definitions and message builders`
+- **Command:** `go test -v ./internal/mcp/prompts`
+- **Exit status:** `0`
+- **Passing evidence:** `PASS: 5/5 prompts across Batch 1 and Batch 2 passed (0.011s)`
+- **Verified at:** `2026-09-30 12:07`
+
+#### REFACTOR
+- **Status:** `REFACTORED`
+- **Changes:** `Composition root wiring in cmd/whmcs-mcp/main.go updated with all Batch 2 components`
+- **Regression command:** `go test -v ./...`
+- **Exit status:** `0`
+- **Regression evidence:** `PASS: 52/52 tests passed across entire repository`
+- **Verified at:** `2026-09-30 12:07`
+
+---
+
 ## 5. Blockers and Exceptions
 
 *Tidak ada blocker aktif saat ini.*
@@ -388,6 +571,11 @@
 | `2026-09-30` | TDD-007 | `Complete` | 9 Tools System Administration Handlers | `internal/mcp/tools/system_test.go` PASS |
 | `2026-09-30` | TDD-008 | `Complete` | 5 Resources Skema `whmcs://*` | `internal/mcp/resources/resources_test.go` PASS |
 | `2026-09-30` | TDD-009 | `Complete` | 2 Prompts Interaktif Klien | `internal/mcp/prompts/prompts_test.go` PASS |
+| `2026-09-30` | TDD-010 | `Complete` | Domain DTO Models Billing, Product & Ticket | `internal/model/billing_test.go` PASS |
+| `2026-09-30` | TDD-011 | `Complete` | 9 Tools Billing & Product Handlers | `internal/mcp/tools/billing_test.go` PASS |
+| `2026-09-30` | TDD-012 | `Complete` | 9 Tools Support Ticket Handlers | `internal/mcp/tools/tickets_test.go` PASS |
+| `2026-09-30` | TDD-013 | `Complete` | 3 Resources Batch 2 (`products`, `support`) | `internal/mcp/resources/batch2_test.go` PASS |
+| `2026-09-30` | TDD-014 | `Complete` | 3 Prompts Batch 2 (`ticket-response`, `revenue-report`, `bulk-invoice-reminder`) | `internal/mcp/prompts/batch2_test.go` PASS |
 
 ---
 
