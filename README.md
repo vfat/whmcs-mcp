@@ -23,7 +23,7 @@ A production-grade, high-performance Model Context Protocol (MCP) server written
 
 ## 📦 Architecture & Inventory
 
-### 1. Tools (62 Tools)
+### 1. Tools (66 Tools - 62 Core Parity + 4 Admin Enhancements)
 
 | Domain | Count | Highlighted Tools |
 |---|:---:|---|
@@ -34,7 +34,7 @@ A production-grade, high-performance Model Context Protocol (MCP) server written
 | **Orders & Quotes** | 10 | `whmcs_get_orders`, `whmcs_accept_order`, `whmcs_cancel_order`, `whmcs_delete_order`, `whmcs_fraud_order`, `whmcs_pending_order`, `whmcs_get_quotes`, `whmcs_create_quote`, `whmcs_accept_quote`, `whmcs_delete_quote` |
 | **Provisioning & Servers** | 6 | `whmcs_get_servers`, `whmcs_module_create`, `whmcs_module_suspend`, `whmcs_module_unsuspend`, `whmcs_module_terminate`, `whmcs_module_change_password` |
 | **Marketing & Growth** | 3 | `whmcs_get_affiliates`, `whmcs_activate_affiliate`, `whmcs_get_promotions` |
-| **System Administration** | 7 | `whmcs_get_stats`, `whmcs_get_admin_users`, `whmcs_get_payment_methods`, `whmcs_get_currencies`, `whmcs_get_activity_log`, `whmcs_log_activity`, `whmcs_get_email_templates`, `whmcs_send_email`, `whmcs_get_todo_items`, `whmcs_update_todo_item` |
+| **System Administration** | 11 | `whmcs_get_stats`, `whmcs_get_admin_users`, `whmcs_get_payment_methods`, `whmcs_get_currencies`, `whmcs_get_activity_log`, `whmcs_log_activity`, `whmcs_get_email_templates`, `whmcs_send_email`, `whmcs_get_todo_items`, `whmcs_get_todo_item_statuses`, `whmcs_update_todo_item` |
 
 ### 2. Resources (11 URI Schemes)
 
