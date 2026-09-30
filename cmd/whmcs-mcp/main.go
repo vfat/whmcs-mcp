@@ -7,6 +7,9 @@ import (
 
 	"github.com/vfat/whmcs-mcp/internal/config"
 	mcpServer "github.com/vfat/whmcs-mcp/internal/mcp"
+	"github.com/vfat/whmcs-mcp/internal/mcp/prompts"
+	"github.com/vfat/whmcs-mcp/internal/mcp/resources"
+	"github.com/vfat/whmcs-mcp/internal/mcp/tools"
 	"github.com/vfat/whmcs-mcp/internal/whmcs"
 )
 
@@ -33,6 +36,18 @@ func main() {
 
 	client := whmcs.NewClient(cfg)
 	srv := mcpServer.NewServer(cfg, client)
+
+	// Registrasi komponen Batch 1
+	tools.RegisterClientTools(srv.MCPServer(), client)
+	tools.RegisterSystemTools(srv.MCPServer(), client)
+	resources.RegisterBatch1Resources(srv.MCPServer(), client)
+	prompts.RegisterBatch1Prompts(srv.MCPServer())
+
+	slog.Info("registered MCP components",
+		"tools", len(srv.MCPServer().ListTools()),
+		"resources", len(srv.MCPServer().ListResources()),
+		"prompts", len(srv.MCPServer().ListPrompts()),
+	)
 
 	slog.Info("starting stdio server loop...")
 	if err := srv.ServeStdio(); err != nil {
