@@ -110,3 +110,190 @@ func TestClientModels_AddClientSerialization(t *testing.T) {
 		t.Errorf("expected clientid 102, got %d", resp.ClientID)
 	}
 }
+
+func TestExtractVMID(t *testing.T) {
+	tests := []struct {
+		name     string
+		cf       model.RawCustomFields
+		expected string
+	}{
+		{
+			name: "vmid found lowercase",
+			cf: model.RawCustomFields{
+				CustomField: []model.CustomFieldItem{
+					{ID: 155, Name: "vmid", Value: "101"},
+					{ID: 156, Name: "node", Value: "pve1"},
+				},
+			},
+			expected: "101",
+		},
+		{
+			name: "vmid found uppercase case-insensitive",
+			cf: model.RawCustomFields{
+				CustomField: []model.CustomFieldItem{
+					{ID: 1, Name: "VMID", Value: "205"},
+				},
+			},
+			expected: "205",
+		},
+		{
+			name: "vmid with whitespace trimmed",
+			cf: model.RawCustomFields{
+				CustomField: []model.CustomFieldItem{
+					{ID: 1, Name: "vmid", Value: "  302  "},
+				},
+			},
+			expected: "302",
+		},
+		{
+			name: "vmid empty value defaults to 000",
+			cf: model.RawCustomFields{
+				CustomField: []model.CustomFieldItem{
+					{ID: 1, Name: "vmid", Value: ""},
+					{ID: 2, Name: "node", Value: "node1"},
+				},
+			},
+			expected: "000",
+		},
+		{
+			name: "vmid only whitespace defaults to 000",
+			cf: model.RawCustomFields{
+				CustomField: []model.CustomFieldItem{
+					{ID: 1, Name: "vmid", Value: "   "},
+				},
+			},
+			expected: "000",
+		},
+		{
+			name: "vmid missing defaults to 000",
+			cf: model.RawCustomFields{
+				CustomField: []model.CustomFieldItem{
+					{ID: 1, Name: "other_field", Value: "val"},
+				},
+			},
+			expected: "000",
+		},
+		{
+			name:     "empty customfields defaults to 000",
+			cf:       model.RawCustomFields{},
+			expected: "000",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := model.ExtractVMID(tt.cf)
+			if got != tt.expected {
+				t.Errorf("ExtractVMID() = %q, want %q", got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestGetClientProductsResponse_Deserialization(t *testing.T) {
+	// 1. JSON dengan customfields berisi vmid (array)
+	jsonWithVMID := `{
+		"result": "success",
+		"totalresults": 1,
+		"startnumber": 0,
+		"numreturned": 1,
+		"products": {
+			"product": [
+				{
+					"id": 77273,
+					"clientid": 109524,
+					"orderid": 554,
+					"pid": 12,
+					"name": "Classic Standard",
+					"status": "Active",
+					"serverip": "157.66.55.179",
+					"serverhostname": "vps.example.com",
+					"customfields": {
+						"customfield": [
+							{"id": 155, "name": "vmid", "value": "101"},
+							{"id": 156, "name": "node", "value": "pve1"}
+						]
+					}
+				}
+			]
+		}
+	}`
+
+	var resp1 model.GetClientProductsResponse
+	if err := json.Unmarshal([]byte(jsonWithVMID), &resp1); err != nil {
+		t.Fatalf("failed to unmarshal jsonWithVMID: %v", err)
+	}
+	if len(resp1.Products.Product) != 1 {
+		t.Fatalf("expected 1 product, got %d", len(resp1.Products.Product))
+	}
+	prod1 := resp1.Products.Product[0]
+	if model.ExtractVMIDFromPtr(prod1.CustomFields) != "101" {
+		t.Errorf("expected VMID 101, got %s", model.ExtractVMIDFromPtr(prod1.CustomFields))
+	}
+
+	// 2. JSON tanpa customfield / customfields string kosong ""
+	jsonWithoutVMID := `{
+		"result": "success",
+		"totalresults": 1,
+		"startnumber": 0,
+		"numreturned": 1,
+		"products": {
+			"product": [
+				{
+					"id": 77274,
+					"clientid": 109524,
+					"name": "Shared Hosting",
+					"status": "Active",
+					"serverip": "157.66.55.180",
+					"customfields": ""
+				}
+			]
+		}
+	}`
+
+	var resp2 model.GetClientProductsResponse
+	if err := json.Unmarshal([]byte(jsonWithoutVMID), &resp2); err != nil {
+		t.Fatalf("failed to unmarshal jsonWithoutVMID: %v", err)
+	}
+	if len(resp2.Products.Product) != 1 {
+		t.Fatalf("expected 1 product, got %d", len(resp2.Products.Product))
+	}
+	prod2 := resp2.Products.Product[0]
+	if model.ExtractVMIDFromPtr(prod2.CustomFields) != "000" {
+		t.Errorf("expected VMID 000, got %s", model.ExtractVMIDFromPtr(prod2.CustomFields))
+	}
+
+	// 3. JSON dengan customfield objek tunggal dan nilai numerik
+	jsonSingleNumericCF := `{
+		"result": "success",
+		"totalresults": 1,
+		"startnumber": 0,
+		"numreturned": 1,
+		"products": {
+			"product": [
+				{
+					"id": 77275,
+					"clientid": 109524,
+					"name": "VPS Pro",
+					"status": "Active",
+					"customfields": {
+						"customfield": {"id": 155, "name": "vmid", "value": 204}
+					}
+				}
+			]
+		}
+	}`
+
+	var resp3 model.GetClientProductsResponse
+	if err := json.Unmarshal([]byte(jsonSingleNumericCF), &resp3); err != nil {
+		t.Fatalf("failed to unmarshal jsonSingleNumericCF: %v", err)
+	}
+	if len(resp3.Products.Product) != 1 {
+		t.Fatalf("expected 1 product, got %d", len(resp3.Products.Product))
+	}
+	prod3 := resp3.Products.Product[0]
+	if model.ExtractVMIDFromPtr(prod3.CustomFields) != "204" {
+		t.Errorf("expected VMID 204, got %s", model.ExtractVMIDFromPtr(prod3.CustomFields))
+	}
+}
+

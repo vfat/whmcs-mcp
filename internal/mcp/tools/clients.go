@@ -158,6 +158,10 @@ func RegisterClientTools(s *server.MCPServer, client *whmcs.Client) {
 		if err := client.Execute(ctx, "GetClientsProducts", req, &resp); err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
 		}
+		for i := range resp.Products.Product {
+			resp.Products.Product[i].VMID = extractVMID(resp.Products.Product[i].CustomFields)
+			resp.Products.Product[i].CustomFields = nil
+		}
 		return formatJSONResult(resp)
 	})
 
@@ -201,3 +205,9 @@ func RegisterClientTools(s *server.MCPServer, client *whmcs.Client) {
 		return formatJSONResult(resp)
 	})
 }
+
+// extractVMID mengekstrak nilai VMID dari CustomFields produk dengan default "000".
+func extractVMID(customFields *model.RawCustomFields) string {
+	return model.ExtractVMIDFromPtr(customFields)
+}
+

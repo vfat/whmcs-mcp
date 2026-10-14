@@ -1,5 +1,12 @@
 package model
 
+import (
+	"encoding/json"
+	"fmt"
+	"strconv"
+	"strings"
+)
+
 // --- GetClients ---
 
 type GetClientsRequest struct {
@@ -148,36 +155,176 @@ type GetClientProductsRequest struct {
 	Username  string `json:"username,omitempty" url:"username,omitempty"`
 }
 
+// CustomFieldItem merepresentasikan sebuah item customfield pada produk WHMCS.
+type CustomFieldItem struct {
+	ID    interface{} `json:"id"`
+	Name  string      `json:"name"`
+	Value string      `json:"value"`
+}
+
+func (c *CustomFieldItem) UnmarshalJSON(data []byte) error {
+	type Alias CustomFieldItem
+	aux := struct {
+		RawValue interface{} `json:"value"`
+		*Alias
+	}{
+		Alias: (*Alias)(c),
+	}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	if aux.RawValue == nil {
+		c.Value = ""
+	} else {
+		switch v := aux.RawValue.(type) {
+		case string:
+			c.Value = v
+		case float64:
+			if v == float64(int64(v)) {
+				c.Value = strconv.FormatInt(int64(v), 10)
+			} else {
+				c.Value = fmt.Sprintf("%v", v)
+			}
+		default:
+			c.Value = fmt.Sprintf("%v", v)
+		}
+	}
+	return nil
+}
+
+// RawCustomFields merepresentasikan pembungkus customfields dari WHMCS API.
+type RawCustomFields struct {
+	CustomField []CustomFieldItem `json:"customfield"`
+}
+
+func (r *RawCustomFields) UnmarshalJSON(data []byte) error {
+	trimmed := strings.TrimSpace(string(data))
+	if trimmed == "" || trimmed == `""` || trimmed == "null" || trimmed == "{}" || trimmed == "[]" {
+		r.CustomField = nil
+		return nil
+	}
+
+	var wrapper struct {
+		CustomField json.RawMessage `json:"customfield"`
+	}
+	if err := json.Unmarshal(data, &wrapper); err != nil {
+		r.CustomField = nil
+		return nil
+	}
+
+	cfTrimmed := strings.TrimSpace(string(wrapper.CustomField))
+	if cfTrimmed == "" || cfTrimmed == `""` || cfTrimmed == "null" || cfTrimmed == "{}" || cfTrimmed == "[]" {
+		r.CustomField = nil
+		return nil
+	}
+
+	var items []CustomFieldItem
+	if err := json.Unmarshal(wrapper.CustomField, &items); err == nil {
+		r.CustomField = items
+		return nil
+	}
+
+	var single CustomFieldItem
+	if err := json.Unmarshal(wrapper.CustomField, &single); err == nil {
+		r.CustomField = []CustomFieldItem{single}
+		return nil
+	}
+
+	r.CustomField = nil
+	return nil
+}
+
+// ExtractVMID mengekstrak nilai VMID dari RawCustomFields (case-insensitive) dengan default "000".
+func ExtractVMID(customFields RawCustomFields) string {
+	for _, cf := range customFields.CustomField {
+		val := strings.TrimSpace(cf.Value)
+		if strings.EqualFold(cf.Name, "vmid") && val != "" {
+			return val
+		}
+	}
+	return "000" // Default jika tidak ditemukan atau kosong
+}
+
+// ExtractVMIDFromPtr mengekstrak nilai VMID dari pointer *RawCustomFields.
+func ExtractVMIDFromPtr(customFields *RawCustomFields) string {
+	if customFields == nil {
+		return "000"
+	}
+	return ExtractVMID(*customFields)
+}
+
 type ClientProductItem struct {
-	ID             int    `json:"id"`
-	ClientID       int    `json:"clientid"`
-	Order       int    `json:"orderid"`
-	PID            int    `json:"pid"`
-	RegDate        string `json:"regdate"`
-	Name           string `json:"name"`
-	Group          string `json:"translated_group_name"`
-	Domain         string `json:"domain"`
-	DedicatedIP    string `json:"dedicatedip"`
-	ServerID       int    `json:"serverid"`
-	ServerName     string `json:"servername"`
-	ServerIP       string `json:"serverip"`
-	ServerHostname string `json:"serverhostname"`
-	FirstPayment   string `json:"firstpaymentamount"`
-	RecurringAmount string `json:"recurringamount"`
-	BillingCycle   string `json:"billingcycle"`
-	NextDueDate    string `json:"nextduedate"`
-	Status         string `json:"status"`
-	Username       string `json:"username"`
+	ID              int              `json:"id"`
+	ClientID        int              `json:"clientid"`
+	OrderID         int              `json:"orderid"`
+	PID             int              `json:"pid"`
+	RegDate         string           `json:"regdate"`
+	Name            string           `json:"name"`
+	Group           string           `json:"translated_group_name"`
+	Domain          string           `json:"domain"`
+	DedicatedIP     string           `json:"dedicatedip"`
+	ServerID        int              `json:"serverid"`
+	ServerName      string           `json:"servername"`
+	ServerIP        string           `json:"serverip"`
+	ServerHostname  string           `json:"serverhostname"`
+	FirstPayment    string           `json:"firstpaymentamount"`
+	RecurringAmount string           `json:"recurringamount"`
+	BillingCycle    string           `json:"billingcycle"`
+	NextDueDate     string           `json:"nextduedate"`
+	Status          string           `json:"status"`
+	Username        string           `json:"username"`
+	VMID            string           `json:"vmid"` // Field flattened untuk AI Agent
+	CustomFields    *RawCustomFields `json:"customfields,omitempty"`
+}
+
+// Product adalah alias dari ClientProductItem
+type Product = ClientProductItem
+
+type ClientProductsContainer struct {
+	Product []ClientProductItem `json:"product"`
+}
+
+func (p *ClientProductsContainer) UnmarshalJSON(data []byte) error {
+	trimmed := strings.TrimSpace(string(data))
+	if trimmed == "" || trimmed == `""` || trimmed == "null" || trimmed == "{}" || trimmed == "[]" {
+		p.Product = nil
+		return nil
+	}
+
+	var wrapper struct {
+		RawProduct json.RawMessage `json:"product"`
+	}
+	if err := json.Unmarshal(data, &wrapper); err != nil {
+		return nil
+	}
+
+	pTrimmed := strings.TrimSpace(string(wrapper.RawProduct))
+	if pTrimmed == "" || pTrimmed == `""` || pTrimmed == "null" || pTrimmed == "{}" || pTrimmed == "[]" {
+		p.Product = nil
+		return nil
+	}
+
+	var items []ClientProductItem
+	if err := json.Unmarshal(wrapper.RawProduct, &items); err == nil {
+		p.Product = items
+		return nil
+	}
+
+	var single ClientProductItem
+	if err := json.Unmarshal(wrapper.RawProduct, &single); err == nil {
+		p.Product = []ClientProductItem{single}
+		return nil
+	}
+
+	return nil
 }
 
 type GetClientProductsResponse struct {
 	CommonResponse
-	TotalResults int `json:"totalresults"`
-	StartNumber  int `json:"startnumber"`
-	NumReturned  int `json:"numreturned"`
-	Products     struct {
-		Product []ClientProductItem `json:"product"`
-	} `json:"products"`
+	TotalResults int                     `json:"totalresults"`
+	StartNumber  int                     `json:"startnumber"`
+	NumReturned  int                     `json:"numreturned"`
+	Products     ClientProductsContainer `json:"products"`
 }
 
 // --- GetClientsDomains ---
