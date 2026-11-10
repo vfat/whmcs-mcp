@@ -23,11 +23,11 @@ A production-grade, high-performance Model Context Protocol (MCP) server written
 
 ## 📦 Architecture & Inventory
 
-### 1. Tools (66 Tools - 62 Core Parity + 4 Admin Enhancements)
+### 1. Tools (67 Tools - 62 Core Parity + 5 Admin Enhancements)
 
 | Domain | Count | Highlighted Tools |
 |---|:---:|---|
-| **Client Management** | 9 | `whmcs_get_clients`, `whmcs_get_client_details`, `whmcs_add_client`, `whmcs_update_client`, `whmcs_delete_client`, `whmcs_get_client_products`, `whmcs_get_client_domains`, `whmcs_get_client_invoices`, `whmcs_close_client` |
+| **Client Management** | 10 | `whmcs_get_clients`, `whmcs_get_client_details`, `whmcs_add_client`, `whmcs_update_client`, `whmcs_delete_client`, `whmcs_get_client_products`, `whmcs_get_client_domains`, `whmcs_get_client_invoices`, `whmcs_get_emails`, `whmcs_close_client` |
 | **Billing & Finance** | 9 | `whmcs_get_invoices`, `whmcs_get_invoice`, `whmcs_create_invoice`, `whmcs_update_invoice`, `whmcs_add_payment`, `whmcs_apply_credit`, `whmcs_get_transactions`, `whmcs_get_products`, `whmcs_get_product_groups` |
 | **Support Tickets** | 9 | `whmcs_get_tickets`, `whmcs_get_ticket`, `whmcs_open_ticket`, `whmcs_add_ticket_reply`, `whmcs_add_ticket_note`, `whmcs_update_ticket`, `whmcs_delete_ticket`, `whmcs_get_support_departments`, `whmcs_get_support_statuses` |
 | **Domain Lifecycle** | 9 | `whmcs_register_domain`, `whmcs_transfer_domain`, `whmcs_renew_domain`, `whmcs_get_domain_whois`, `whmcs_get_domain_nameservers`, `whmcs_update_domain_nameservers`, `whmcs_get_domain_lock_status`, `whmcs_update_domain_lock_status`, `whmcs_get_tld_pricing` |

@@ -39,6 +39,7 @@ func TestRegisterClientTools_AllToolsPresent(t *testing.T) {
 		"whmcs_get_client_products",
 		"whmcs_get_client_domains",
 		"whmcs_get_client_invoices",
+		"whmcs_get_emails",
 	}
 
 	foundMap := make(map[string]bool)
@@ -379,6 +380,90 @@ func TestClientTools_GetClientProducts_VMID(t *testing.T) {
 
 	if !strings.Contains(content2.Text, `"vmid": "000"`) {
 		t.Errorf("expected output to contain \"vmid\": \"000\", got: %s", content2.Text)
+	}
+}
+
+func TestClientTools_GetEmails(t *testing.T) {
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		action := r.FormValue("action")
+		if action != "GetEmails" {
+			t.Errorf("expected action GetEmails, got %s", action)
+		}
+		clientID := r.FormValue("clientid")
+		if clientID != "101" {
+			t.Errorf("expected clientid 101, got %s", clientID)
+		}
+		_, _ = w.Write([]byte(`{
+			"result": "success",
+			"totalresults": 1,
+			"startnumber": 0,
+			"numreturned": 1,
+			"emails": {
+				"email": [
+					{
+						"id": 5001,
+						"userid": 101,
+						"subject": "Email Verification Token",
+						"message": "<p>Use token: <strong>VERIFY-12345</strong></p>",
+						"date": "2026-11-10 12:00:00",
+						"to": "client@example.com"
+					}
+				]
+			}
+		}`))
+	}))
+	defer mockServer.Close()
+
+	cfg := &config.Config{
+		URL:        mockServer.URL,
+		Identifier: "id",
+		Secret:     "sec",
+		Timeout:    5 * time.Second,
+	}
+	client := whmcs.NewClient(cfg)
+	srv := mcpServer.NewServer(cfg, client)
+	tools.RegisterClientTools(srv.MCPServer(), client)
+
+	toolItem := srv.MCPServer().GetTool("whmcs_get_emails")
+	if toolItem == nil {
+		t.Fatal("tool whmcs_get_emails not found")
+	}
+
+	// 1. Missing clientid -> error
+	callReqMissing := mcp.CallToolRequest{}
+	callReqMissing.Params.Name = "whmcs_get_emails"
+	callReqMissing.Params.Arguments = map[string]interface{}{}
+	resMissing, err := toolItem.Handler(context.Background(), callReqMissing)
+	if err != nil {
+		t.Fatalf("unexpected handler error: %v", err)
+	}
+	if !resMissing.IsError {
+		t.Errorf("expected error when clientid is missing")
+	}
+
+	// 2. Valid call with clientid & subject
+	callReq := mcp.CallToolRequest{}
+	callReq.Params.Name = "whmcs_get_emails"
+	callReq.Params.Arguments = map[string]interface{}{
+		"clientid": 101,
+		"subject":  "Verification",
+		"limitnum": 5,
+	}
+	res, err := toolItem.Handler(context.Background(), callReq)
+	if err != nil {
+		t.Fatalf("unexpected handler error: %v", err)
+	}
+	if res.IsError {
+		t.Fatalf("expected success, got error: %v", res.Content)
+	}
+
+	content, ok := res.Content[0].(mcp.TextContent)
+	if !ok {
+		t.Fatalf("expected TextContent, got %T", res.Content[0])
+	}
+	if !strings.Contains(content.Text, "VERIFY-12345") {
+		t.Errorf("expected output to contain token VERIFY-12345, got: %s", content.Text)
 	}
 }
 

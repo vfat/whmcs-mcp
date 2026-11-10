@@ -30,7 +30,7 @@ func formatJSONResult(v interface{}) (*mcp.CallToolResult, error) {
 	return mcp.NewToolResultText(string(b)), nil
 }
 
-// RegisterClientTools mendaftarkan seluruh 8 tools Client Management ke server MCP.
+// RegisterClientTools mendaftarkan seluruh 9 tools Client Management ke server MCP.
 func RegisterClientTools(s *server.MCPServer, client *whmcs.Client) {
 	// 1. whmcs_get_clients
 	s.AddTool(mcp.NewTool("whmcs_get_clients",
@@ -200,6 +200,30 @@ func RegisterClientTools(s *server.MCPServer, client *whmcs.Client) {
 
 		var resp map[string]interface{}
 		if err := client.Execute(ctx, "GetInvoices", req, &resp); err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
+		return formatJSONResult(resp)
+	})
+
+	// 9. whmcs_get_emails
+	s.AddTool(mcp.NewTool("whmcs_get_emails",
+		mcp.WithDescription("Get email history sent to a specific client (useful for checking verification tokens, activation links, or password resets)."),
+		mcp.WithNumber("clientid", mcp.Required(), mcp.Description("The client ID to retrieve sent emails for")),
+		mcp.WithString("subject", mcp.Description("Filter emails by subject substring (e.g. Verification, Welcome, Reset)")),
+		mcp.WithString("date", mcp.Description("Filter emails by date (format: Y-m-d H:i:s)")),
+		mcp.WithNumber("limitstart", mcp.Description("Offset for pagination (default: 0)")),
+		mcp.WithNumber("limitnum", mcp.Description("Number of email records to return (default: 25)")),
+	), func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		var req model.GetEmailsRequest
+		if err := parseArguments(request.Params.Arguments, &req); err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("invalid arguments: %v", err)), nil
+		}
+		if req.ClientID == 0 {
+			return mcp.NewToolResultError("clientid is required"), nil
+		}
+
+		var resp model.GetEmailsResponse
+		if err := client.Execute(ctx, "GetEmails", req, &resp); err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
 		}
 		return formatJSONResult(resp)

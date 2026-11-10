@@ -10,7 +10,7 @@
 - **Scope:** `Greenfield development`
 - **Activated at:** `2026-09-30`
 - **Constitution:** `.ai-doc/constitution.md`
-- **Last updated:** `2026-09-30 09:45`
+- **Last updated:** `2026-11-10 03:43`
 - **Overall status:** `Active`
 - **Test Runner:** `go test -v ./...`
 
@@ -20,12 +20,12 @@
 
 | Metric | Count |
 |---|---:|
-| Total targets | 24 |
+| Total targets | 25 |
 | PLANNED | 0 |
 | RED | 0 |
 | GREEN | 0 |
 | REFACTORING | 0 |
-| REFACTORED | 24 |
+| REFACTORED | 25 |
 | BLOCKED | 0 |
 | EXCEPTION | 0 |
 
@@ -59,6 +59,7 @@
 | **TDD-022** | `MCP Tools` | 6 Tools Marketing & Admin Extra Handlers | Registrasi dan eksekusi afiliasi, aktivasi, promosi, audit log, templat email, dan delete client | `internal/mcp/tools/marketing_test.go` | `REFACTORED` | `go test -v ./...` PASS (0.017s) | Batch 4 Marketing & Admin Tools |
 | **TDD-023** | `MCP Resources`| 2 Resources Batch 4 (`servers`, `promotions`) | Resource URI katalog server aktif dan promosi kupon diskon sistem | `internal/mcp/resources/batch4_test.go` | `REFACTORED` | `go test -v ./...` PASS (0.021s) | Batch 4 Resources |
 | **TDD-024** | `MCP Prompts`  | 1 Prompt Batch 4 (`new-product-setup`) | Prompt cerdas panduan pembuatan paket hosting baru lengkap dengan modul server | `internal/mcp/prompts/batch4_test.go` | `REFACTORED` | `go test -v ./...` PASS (0.011s) | Batch 4 Prompts |
+| **TDD-025** | `Client Email` | Tool `whmcs_get_emails` (`GetEmails`) | Mengambil riwayat email klien untuk verifikasi token/link aktivasi dengan custom unmarshaler | `internal/model/client_test.go`, `internal/mcp/tools/clients_test.go` | `REFACTORED` | `go test -v ./...` PASS (0.049s) | Client Email & Token Inspection |
 
 ---
 
@@ -916,6 +917,42 @@
 
 ---
 
+### TDD-025 — Client Email History & Token Inspection (`whmcs_get_emails`)
+
+- **Component:** `internal/model`, `internal/mcp/tools`
+- **Use case source:** `.ai-doc/desain-component-document/DCD-01-Client-Management.md`
+- **Acceptance criteria:**
+  1. DTO `GetEmailsRequest`, `EmailItem`, `ClientEmailsContainer` (dengan custom `UnmarshalJSON` untuk menangani array, single object, dan empty string `""`), serta `GetEmailsResponse`.
+  2. Registrasi MCP tool `whmcs_get_emails` dengan validasi `clientid` wajib, serta filter opsional `subject`, `date`, `limitstart`, `limitnum`.
+  3. Mengeksekusi action `GetEmails` ke WHMCS API untuk mengambil pesan email beserta token verifikasi/aktivasi di dalam field `message`.
+- **Current status:** `REFACTORED`
+
+#### RED
+- **Test file:** `internal/model/client_test.go`, `internal/mcp/tools/clients_test.go`, `internal/mcp/server_test.go`
+- **Test name/target:** `TestClientModels_GetEmailsSerializationAndDeserialization`, `TestClientTools_GetEmails`, `TestRegisterClientTools_AllToolsPresent`, `TestFullServerParity`
+- **Command:** `go test -v ./internal/model ./internal/mcp/tools ./internal/mcp`
+- **Exit status:** `1`
+- **Failure evidence:** `internal/model/client_test.go:301:15: undefined: model.GetEmailsRequest; clients_test.go:52: expected tool whmcs_get_emails to be registered; server_test.go:182: parity error: tool whmcs_get_emails is missing`
+- **Verified at:** `2026-11-10 03:42`
+
+#### GREEN
+- **Implementation file(s):** `internal/model/client.go`, `internal/mcp/tools/clients.go`
+- **Minimal change:** `Implement GetEmailsRequest, GetEmailsResponse, ClientEmailsContainer.UnmarshalJSON, and register whmcs_get_emails tool handler`
+- **Command:** `go test -v ./...`
+- **Exit status:** `0`
+- **Passing evidence:** `PASS: TestClientModels_GetEmailsSerializationAndDeserialization, TestClientTools_GetEmails, TestFullServerParity (0.049s)`
+- **Verified at:** `2026-11-10 03:43`
+
+#### REFACTOR
+- **Status:** `REFACTORED`
+- **Changes:** `Update doc comments in clients.go, sync tool inventory in README.md and DCD-01-Client-Management.md`
+- **Regression command:** `go test -v ./... && go build -o /dev/null ./cmd/whmcs-mcp`
+- **Exit status:** `0`
+- **Regression evidence:** `PASS: all packages passed and binary compiled cleanly`
+- **Verified at:** `2026-11-10 03:43`
+
+---
+
 ## 5. Blockers and Exceptions
 
 *Tidak ada blocker aktif saat ini.*
@@ -947,6 +984,7 @@
 | `2026-09-30` | TDD-022 | `Complete` | 6 Tools Marketing & Admin Extra Handlers | `internal/mcp/tools/marketing_test.go` PASS |
 | `2026-09-30` | TDD-023 | `Complete` | 2 Resources Batch 4 (`servers`, `promotions`) | `internal/mcp/resources/batch4_test.go` PASS |
 | `2026-09-30` | TDD-024 | `Complete` | 1 Prompt Batch 4 (`new-product-setup`) | `internal/mcp/prompts/batch4_test.go` PASS |
+| `2026-11-10` | TDD-025 | `Complete` | Tool `whmcs_get_emails` (`GetEmails`) untuk inspeksi email & token klien | `internal/model/client_test.go`, `internal/mcp/tools/clients_test.go` PASS |
 
 ---
 

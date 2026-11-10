@@ -29,6 +29,7 @@ Target Pengguna:
   - `whmcs_get_client_products`
   - `whmcs_get_client_domains`
   - `whmcs_get_client_invoices`
+  - `whmcs_get_emails`
 - **Transport**: JSON-RPC 2.0 via `os.Stdin` / `os.Stdout`.
 
 ### 2.2 Control
@@ -60,6 +61,7 @@ Target Pengguna:
 | 2 | Daftarkan & Perbarui Akun Klien | `AddClient`, `UpdateClient` | Safe | `AddClient`, `UpdateClient` |
 | 3 | Tutup Akun Klien | `CloseClient` | Destructive | `CloseClient` |
 | 4 | Ambil Layanan, Domain, & Faktur | `GetClientsProducts`, `GetClientsDomains`, `GetInvoices` | Safe | `GetClientProducts`, `GetClientDomains`, `GetInvoices` |
+| 5 | Ambil Riwayat Email & Cek Token | `GetEmails` | Safe | `GetEmails` |
 
 ---
 

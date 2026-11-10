@@ -370,3 +370,74 @@ type GetClientInvoicesRequest struct {
 	Status   string `json:"status,omitempty" url:"status,omitempty"`
 	LimitNum int    `json:"limitnum,omitempty" url:"limitnum,omitempty"`
 }
+
+// --- GetEmails ---
+
+type GetEmailsRequest struct {
+	ClientID   int    `json:"clientid" url:"clientid"`
+	Date       string `json:"date,omitempty" url:"date,omitempty"`
+	Subject    string `json:"subject,omitempty" url:"subject,omitempty"`
+	LimitStart int    `json:"limitstart,omitempty" url:"limitstart,omitempty"`
+	LimitNum   int    `json:"limitnum,omitempty" url:"limitnum,omitempty"`
+}
+
+type EmailItem struct {
+	ID          int    `json:"id"`
+	UserID      int    `json:"userid"`
+	Subject     string `json:"subject"`
+	Message     string `json:"message"`
+	Date        string `json:"date"`
+	To          string `json:"to"`
+	CC          string `json:"cc"`
+	BCC         string `json:"bcc"`
+	Attachments string `json:"attachments,omitempty"`
+	Pending     int    `json:"pending,omitempty"`
+	Failed      int    `json:"failed,omitempty"`
+}
+
+type ClientEmailsContainer struct {
+	Email []EmailItem `json:"email"`
+}
+
+func (e *ClientEmailsContainer) UnmarshalJSON(data []byte) error {
+	trimmed := strings.TrimSpace(string(data))
+	if trimmed == "" || trimmed == `""` || trimmed == "null" || trimmed == "{}" || trimmed == "[]" {
+		e.Email = nil
+		return nil
+	}
+
+	var wrapper struct {
+		RawEmail json.RawMessage `json:"email"`
+	}
+	if err := json.Unmarshal(data, &wrapper); err != nil {
+		return nil
+	}
+
+	eTrimmed := strings.TrimSpace(string(wrapper.RawEmail))
+	if eTrimmed == "" || eTrimmed == `""` || eTrimmed == "null" || eTrimmed == "{}" || eTrimmed == "[]" {
+		e.Email = nil
+		return nil
+	}
+
+	var items []EmailItem
+	if err := json.Unmarshal(wrapper.RawEmail, &items); err == nil {
+		e.Email = items
+		return nil
+	}
+
+	var single EmailItem
+	if err := json.Unmarshal(wrapper.RawEmail, &single); err == nil {
+		e.Email = []EmailItem{single}
+		return nil
+	}
+
+	return nil
+}
+
+type GetEmailsResponse struct {
+	CommonResponse
+	TotalResults int                   `json:"totalresults"`
+	StartNumber  int                   `json:"startnumber"`
+	NumReturned  int                   `json:"numreturned"`
+	Emails       ClientEmailsContainer `json:"emails"`
+}

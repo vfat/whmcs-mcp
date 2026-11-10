@@ -1,6 +1,6 @@
 # Makefile for WHMCS MCP Server
 
-VERSION ?= v0.1.0
+VERSION ?= v0.3.0
 LDFLAGS := -s -w -X github.com/vfat/whmcs-mcp/internal/version.Version=$(VERSION)
 
 .PHONY: all build test test-coverage build-all clean docker-build

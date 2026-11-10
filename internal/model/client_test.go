@@ -297,3 +297,113 @@ func TestGetClientProductsResponse_Deserialization(t *testing.T) {
 	}
 }
 
+func TestClientModels_GetEmailsSerializationAndDeserialization(t *testing.T) {
+	req := model.GetEmailsRequest{
+		ClientID:   101,
+		Subject:    "Verification",
+		Date:       "2026-11-10",
+		LimitStart: 0,
+		LimitNum:   5,
+	}
+
+	values, err := whmcs.SerializeParams(req)
+	if err != nil {
+		t.Fatalf("failed to serialize GetEmailsRequest: %v", err)
+	}
+
+	if values.Get("clientid") != "101" {
+		t.Errorf("expected clientid 101, got %s", values.Get("clientid"))
+	}
+	if values.Get("subject") != "Verification" {
+		t.Errorf("expected subject Verification, got %s", values.Get("subject"))
+	}
+	if values.Get("date") != "2026-11-10" {
+		t.Errorf("expected date 2026-11-10, got %s", values.Get("date"))
+	}
+	if values.Get("limitnum") != "5" {
+		t.Errorf("expected limitnum 5, got %s", values.Get("limitnum"))
+	}
+
+	// 1. Array of emails
+	jsonArray := `{
+		"result": "success",
+		"totalresults": 1,
+		"startnumber": 0,
+		"numreturned": 1,
+		"emails": {
+			"email": [
+				{
+					"id": 142,
+					"userid": 101,
+					"subject": "Email Verification Token",
+					"message": "<p>Your verification token is: <b>TOKEN-987654</b></p>",
+					"date": "2026-11-10 10:30:00",
+					"to": "john@example.com",
+					"cc": "",
+					"bcc": ""
+				}
+			]
+		}
+	}`
+
+	var resp1 model.GetEmailsResponse
+	if err := json.Unmarshal([]byte(jsonArray), &resp1); err != nil {
+		t.Fatalf("failed to unmarshal jsonArray: %v", err)
+	}
+	if len(resp1.Emails.Email) != 1 {
+		t.Fatalf("expected 1 email, got %d", len(resp1.Emails.Email))
+	}
+	if resp1.Emails.Email[0].ID != 142 {
+		t.Errorf("expected email ID 142, got %d", resp1.Emails.Email[0].ID)
+	}
+	if resp1.Emails.Email[0].Subject != "Email Verification Token" {
+		t.Errorf("expected subject 'Email Verification Token', got %q", resp1.Emails.Email[0].Subject)
+	}
+
+	// 2. Single email object
+	jsonSingle := `{
+		"result": "success",
+		"totalresults": 1,
+		"startnumber": 0,
+		"numreturned": 1,
+		"emails": {
+			"email": {
+				"id": 143,
+				"userid": 101,
+				"subject": "Password Reset",
+				"message": "Reset link: https://example.com/pwreset?token=abcdef",
+				"date": "2026-11-10 11:00:00",
+				"to": "john@example.com"
+			}
+		}
+	}`
+
+	var resp2 model.GetEmailsResponse
+	if err := json.Unmarshal([]byte(jsonSingle), &resp2); err != nil {
+		t.Fatalf("failed to unmarshal jsonSingle: %v", err)
+	}
+	if len(resp2.Emails.Email) != 1 {
+		t.Fatalf("expected 1 email from single object, got %d", len(resp2.Emails.Email))
+	}
+	if resp2.Emails.Email[0].ID != 143 {
+		t.Errorf("expected email ID 143, got %d", resp2.Emails.Email[0].ID)
+	}
+
+	// 3. Empty emails string ""
+	jsonEmpty := `{
+		"result": "success",
+		"totalresults": 0,
+		"startnumber": 0,
+		"numreturned": 0,
+		"emails": ""
+	}`
+
+	var resp3 model.GetEmailsResponse
+	if err := json.Unmarshal([]byte(jsonEmpty), &resp3); err != nil {
+		t.Fatalf("failed to unmarshal jsonEmpty: %v", err)
+	}
+	if len(resp3.Emails.Email) != 0 {
+		t.Errorf("expected 0 emails, got %d", len(resp3.Emails.Email))
+	}
+}
+

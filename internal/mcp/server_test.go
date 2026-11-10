@@ -105,7 +105,7 @@ func TestFullServerParity(t *testing.T) {
 	resources.RegisterBatch4Resources(srv.MCPServer(), client)
 	prompts.RegisterBatch4Prompts(srv.MCPServer())
 
-	// 1. Verifikasi Seluruh 62 Tool Paritas
+	// 1. Verifikasi Seluruh Tool Paritas
 	expectedTools := []string{
 		"whmcs_get_clients",
 		"whmcs_get_client_details",
@@ -114,6 +114,7 @@ func TestFullServerParity(t *testing.T) {
 		"whmcs_delete_client",
 		"whmcs_get_client_products",
 		"whmcs_get_client_domains",
+		"whmcs_get_emails",
 		"whmcs_get_products",
 		"whmcs_get_product_groups",
 		"whmcs_get_invoices",
